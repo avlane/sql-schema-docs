@@ -4,14 +4,16 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- One result row holding the whole document, built with STRING_AGG
+    -- One result row holding the whole document, built with STRING_AGG.
+    -- STRING_AGG returns NVARCHAR(4000) unless its input is MAX, and fails with error 9829
+    -- once the result passes 2 GB, so the inputs are cast to NVARCHAR(MAX) to avoid the 4000 limit.
     SELECT STRING_AGG(CAST(page AS NVARCHAR(MAX)), CHAR(10) + CHAR(10)) WITHIN GROUP (ORDER BY table_name) AS markdown
     FROM (
         SELECT t.name AS table_name,
                N'## ' + @Schema + N'.' + t.name + CHAR(10)
                + ISNULL(CAST(tp.value AS NVARCHAR(4000)), N'_No description._') + CHAR(10) + CHAR(10)
                + N'| Column | Type | Null |' + CHAR(10) + N'|---|---|---|' + CHAR(10)
-               + (SELECT STRING_AGG(N'| ' + c.name + N' | ' + TYPE_NAME(c.user_type_id) + N' | ' + IIF(c.is_nullable = 1, N'yes', N'no') + N' |', CHAR(10))
+               + (SELECT STRING_AGG(CAST(N'| ' + c.name + N' | ' + TYPE_NAME(c.user_type_id) + N' | ' + IIF(c.is_nullable = 1, N'yes', N'no') + N' |' AS NVARCHAR(MAX)), CHAR(10))
                          WITHIN GROUP (ORDER BY c.column_id)
                   FROM sys.columns AS c WHERE c.object_id = t.object_id) AS page
         FROM sys.tables AS t
