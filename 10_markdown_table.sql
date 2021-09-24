@@ -16,7 +16,7 @@ BEGIN
     SELECT line
     FROM (
         SELECT 0 AS ord, N'## ' + @Schema + N'.' + @Table AS line
-        UNION ALL SELECT 1, ISNULL(@desc, N'_No description._')
+        UNION ALL SELECT 1, ISNULL(REPLACE(@desc, N'|', N'\|'), N'_No description._')
         UNION ALL SELECT 2, N'| Column | Type | Null | Description |'
         UNION ALL SELECT 3, N'|---|---|---|---|'
         UNION ALL
@@ -24,7 +24,7 @@ BEGIN
                N'| ' + c.name
                + N' | ' + TYPE_NAME(c.user_type_id)
                + N' | ' + IIF(c.is_nullable = 1, N'yes', N'no')
-               + N' | ' + ISNULL(CAST(ep.value AS NVARCHAR(4000)), N'')
+               + N' | ' + ISNULL(REPLACE(CAST(ep.value AS NVARCHAR(4000)), N'|', N'\|'), N'')
                + N' |'
         FROM sys.columns AS c
         LEFT JOIN sys.extended_properties AS ep
