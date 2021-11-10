@@ -12,3 +12,10 @@ SELECT OBJECT_SCHEMA_NAME(t.object_id) + '.' + t.name AS table_name,
 FROM sys.tables AS t
 WHERE t.is_ms_shipped = 0
 ORDER BY table_name;
+
+-- For system-versioned tables, which table holds the history?
+SELECT OBJECT_SCHEMA_NAME(t.object_id) + '.' + t.name AS table_name,
+       OBJECT_SCHEMA_NAME(h.object_id) + '.' + h.name AS history_table
+FROM sys.tables AS t
+JOIN sys.tables AS h ON h.object_id = t.history_table_id
+WHERE t.temporal_type = 2;
